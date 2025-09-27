@@ -1,0 +1,17 @@
+{# Beklenen context: top_tabs (list), active_tab (slug), vendor, year #}
+<nav class="t1d-tabs">
+  <ul>
+    {% for tab in top_tabs %}
+      <li>
+        <a href="{{ tab.url }}"
+           class="{% if active_tab == tab.slug %}is-active{% endif %}">
+          {{ tab.label }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+  <div class="t1d-meta">
+    <span class="t1d-vendor">{{ vendor|upper }}</span>
+    <span class="t1d-year">{{ year }}</span>
+  </div>
+</nav>

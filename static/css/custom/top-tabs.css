@@ -1,0 +1,56 @@
+/* ---- Renk değişkenleri (sidebar ile uyumlu) ---- */
+:root{
+  --t1d-bg: #1f2235;          /* sidebar arka planı */
+  --t1d-fg: #d2d7e3;          /* ana yazı */
+  --t1d-fg-muted: #9aa3b8;    /* ikincil yazı */
+  --t1d-chip-bg: #2a2f45;     /* sekme buton zemini */
+  --t1d-chip-hover: #343a56;  /* hover zemini */
+
+  /* AKTİF: .badge-primary ile aynı renk
+     - Bootstrap 5 varsa: var(--bs-primary)
+     - Yoksa aşağıdaki hex kullanılacak (istediğinle değiştir) */
+  --t1d-chip-active: var(--bs-primary, #f2125e);
+  --t1d-chip-active-fg: #fff; /* aktifken yazı rengi */
+}
+
+/* ---- Üst sekme barı ---- */
+.t1d-tabs{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--t1d-bg); color:var(--t1d-fg);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:sticky; top:52px; z-index:50; margin-top:-2px;
+}
+
+/* Sol taraftaki sekmeler */
+.t1d-tabs ul{ list-style:none; margin:0; padding:0; display:flex; gap:8px; }
+
+/* Buton görünümlü link */
+.t1d-tabs a{
+  display:inline-block; padding:7px 12px; border-radius:8px;
+  text-decoration:none; color:var(--t1d-fg);
+  background:var(--t1d-chip-bg); border:1px solid transparent;
+  font-weight:600; transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.t1d-tabs a:hover{ background:var(--t1d-chip-hover); }
+
+/* AKTİF / TIKLANAN sekme: rozet rengi + beyaz yazı */
+.t1d-tabs a.is-active,
+.t1d-tabs a.is-active:hover,
+.t1d-tabs a:active{
+  background:var(--t1d-chip-active);
+  color:var(--t1d-chip-active-fg);
+  border-color:transparent;
+  box-shadow:0 1px 0 rgba(0,0,0,.05);
+}
+
+/* Sağdaki meta */
+.t1d-meta{ font-size:12px; color:var(--t1d-fg-muted); }
+.t1d-meta .t1d-vendor{ font-weight:700; color:var(--t1d-fg); margin-right:8px; }
+
+/* İçerik üst boşluğunu hafif azalt */
+.main-panel .content-wrapper{ padding-top:.1rem; }
+
+/* Sekmeler ile içerik başlığı arasına boşluk */
+.t1d-tabs{
+  margin-bottom: 14px;   /* 10–16px arası zevkine göre */
+}

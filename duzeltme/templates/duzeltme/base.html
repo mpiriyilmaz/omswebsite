@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{# Global base’in title/description/keywords bloklarını dolduralım #}
+{% block title %}{{ page_title|default:"ARAS – Tablo1 Düzeltme" }}{% endblock %}
+{% block page_description %}{{ page_description|default:"Tablo1 düzeltme ekranı" }}{% endblock %}
+{% block page_keywords %}{{ page_keywords|default:"tablo1,duzeltme" }}{% endblock %}
+
+{# Üst sekmelerin css’i #}
+{% block extracss %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/custom/top-tabs.css' %}">
+
+    {# Font Awesome (demo ikonları için) #}
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  {# Timeline stilimiz #}
+  <link rel="stylesheet" href="{% static 'css/custom/timeline.css' %}">
+  
+{% endblock %}
+
+{# Global base.html içindeki content bloğunu dolduruyoruz #}
+{% block content %}
+  {# Üst sekmeler (context: top_tabs, active_tab, vendor, year) #}
+  {% include "partials/_top_tabs.html" %}
+
+  {# Her sayfanın kendi içeriği buraya gelecek #}
+  {% block duzeltme_content %}{% endblock %}
+{% endblock %}
