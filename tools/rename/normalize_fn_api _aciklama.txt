@@ -1,0 +1,292 @@
+
+
+'''
+
+Aşağıdaki Python kodu:
+
+Klasörü, sistem/kategori/yıl/[opsiyonel ay]/çekim-tarihi ve versiyonu senden ister (boş bırakırsan makul varsayılanlar kullanır),
+
+Dosyaları sıralar (isim/son değiştirme tarihine göre seçilebilir),
+
+Önce önizleme yapar, onaylayınca yeniden adlandırır,
+
+Tek dosyada part-XX eklemez, birden fazla dosyada otomatik ekler,
+
+Her dosyanın kendi uzantısını (.xlsx/.csv) korur,
+
+Çakışmaları başlamadan yakalar.
+
+Dosya adı biçimleri
+Tek dosya:
+<sistem>_<kategori>_<yıl[-ay]>_<çekim-tarihi>_vNN.<csv|xlsx>
+Çok dosya:
+<sistem>_<kategori>_<yıl[-ay]>_<çekim-tarihi>_part-PP_vNN.<csv|xlsx>
+
+
+
+
+1) batch_donustur(jobs) — Listeyle toplu çağrı
+
+Koduna şu yardımcıyı ekle (en alta koyabilirsin):
+
+def batch_donustur(jobs: List[dict]) -> List[Dict[str,int]]:
+    """
+    jobs içindeki her dict, donusturme(...) ile aynı parametreleri taşır.
+    Örn.:
+      jobs = [
+        dict(folder=".../tablo1/csv", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2021", system="oms", mevcut_dosya_adi="2021"),
+        dict(folder=".../tablo1/csv", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2022", system="oms", mevcut_dosya_adi="2022"),
+        dict(folder=".../tablo1/csv", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2023", system="oms", mevcut_dosya_adi="2023"),
+      ]
+    """
+    results = []
+    for t in jobs:
+        results.append(donusturme(**t))
+    return results
+
+
+Kullanım (tek satırda çok klasör/yıl):
+
+jobs = [
+  dict(folder="data/rapor/ham_veri/oms/tablo1/csv/", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2021", system="oms", mevcut_dosya_adi="2021"),
+  dict(folder="data/rapor/ham_veri/oms/tablo1/csv/", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2022", system="oms", mevcut_dosya_adi="2022"),
+  dict(folder="data/rapor/ham_veri/oms/tablo1/csv/", kategori="tablo1", cekim_tarihi="2025-10-01", versiyon="v01", yil="2023", system="oms", mevcut_dosya_adi="2023"),
+]
+batch_donustur(jobs)
+
+2) donustur_from_years(...) — Yıllar listesini ver, o yapsın
+
+Aynı klasörde 2021/2022/2023 gibi dosyalar varsa ve hepsini sırayla dönüştürmek istiyorsan:
+
+def donustur_from_years(
+    folder: Union[str, Path],
+    kategori: str,
+    cekim_tarihi: Union[str, date],
+    versiyon: str,
+    system: str,
+    years: List[str],
+    *,
+    exts: List[str] = ("xlsx","csv"),
+    ay: Optional[str] = None,
+    part: str = "",
+    dry_run: bool = False
+):
+    for y in years:
+        donusturme(
+            folder=folder,
+            kategori=kategori,
+            cekim_tarihi=cekim_tarihi,
+            versiyon=versiyon,
+            yil=str(y),
+            system=system,
+            ay=ay,
+            part=part,
+            exts=exts,
+            mevcut_dosya_adi=str(y),  # sadece o yılı içeren dosya(lar)
+            dry_run=dry_run
+        )
+
+
+Kullanım:
+
+donustur_from_years(
+    folder="data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    system="oms",
+    years=["2021","2022","2023"]
+)
+
+3) donustur_auto_years(...) — Klasördeki yılları otomatik bul
+
+Klasör içindeki dosya adlarından benzersiz yılları (20xx) toplayıp her biri için dönüştürsün:
+
+def donustur_auto_years(
+    folder: Union[str, Path],
+    kategori: str,
+    cekim_tarihi: Union[str, date],
+    versiyon: str,
+    system: str,
+    *,
+    exts: List[str] = ("xlsx","csv"),
+    ay: Optional[str] = None,
+    part: str = "",
+    dry_run: bool = False,
+    include: Optional[List[str]] = None,   # sadece seçilen yıllar (örn ["2021","2023"])
+    exclude: Optional[List[str]] = None    # hariç tutulacak yıllar
+):
+    folder = Path(folder)
+    years = set()
+    for p in folder.iterdir():
+        if p.is_file() and p.suffix.lower().lstrip(".") in [e.lower().lstrip(".") for e in exts]:
+            m = re.search(r"\b(20\d{2})\b", p.stem)
+            if m:
+                years.add(m.group(1))
+
+    years = sorted(years)
+    if include:
+        inc = set(str(y) for y in include)
+        years = [y for y in years if y in inc]
+    if exclude:
+        exc = set(str(y) for y in exclude)
+        years = [y for y in years if y not in exc]
+
+    for y in years:
+        donusturme(
+            folder=folder,
+            kategori=kategori,
+            cekim_tarihi=cekim_tarihi,
+            versiyon=versiyon,
+            yil=y,
+            system=system,
+            ay=ay,
+            part=part,
+            exts=exts,
+            mevcut_dosya_adi=y,   # o yılı içeren dosyalar
+            dry_run=dry_run
+        )
+
+
+Kullanım:
+
+# klasörde geçen tüm yılları otomatik bul ve işle
+donustur_auto_years(
+    "data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    system="oms",
+    exclude=["2020"]   # istersen bazı yılları hariç tut
+)
+
+Hangisini seçmeliyim?
+
+Yılları sen belirleyeceksen: donustur_from_years([...])
+
+Yılları dosyalardan otomatik çıkarmak istersen: donustur_auto_years(...)
+
+Farklı klasör + farklı parametreler bir aradaysa: batch_donustur(jobs)
+
+İstersen bunları senin dosyana tek blok olarak entegre edilmiş halde gönderirim; sadece kopyala-yapıştır çalışır.
+
+'''
+
+
+
+'''
+donusturme(
+    folder="data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    yil="2023",          # yolundan da çıkarabilir ama burada net verdik
+    system="oms",        # yolundan da çıkarabilir
+    ay=None,             # "10" verirsen ad '2025-10' olur
+    part="",             # "" => otomatik; tek dosyada part eklenmez
+    exts=["xlsx","csv"], # sadece istediğin uzantılar
+    mevcut_dosya_adi="2023",       # içinde 2021 geçen(ler)
+    dry_run=False
+)
+
+
+donusturme(
+    folder="data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    yil="2022",          # yolundan da çıkarabilir ama burada net verdik
+    system="oms",        # yolundan da çıkarabilir
+    ay=None,             # "10" verirsen ad '2025-10' olur
+    part="",             # "" => otomatik; tek dosyada part eklenmez
+    exts=["xlsx","csv"], # sadece istediğin uzantılar
+    mevcut_dosya_adi="2022",       # içinde 2021 geçen(ler)
+    dry_run=False
+)
+
+
+
+donusturme(
+    folder="data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    yil="2023",          # yolundan da çıkarabilir ama burada net verdik
+    system="oms",        # yolundan da çıkarabilir
+    ay=None,             # "10" verirsen ad '2025-10' olur
+    part="",             # "" => otomatik; tek dosyada part eklenmez
+    exts=["xlsx","csv"], # sadece istediğin uzantılar
+    mevcut_dosya_adi="2023",       # içinde 2021 geçen(ler)
+    dry_run=False
+)
+
+
+
+
+Nasıl kullanırsın?
+1) Tek klasör
+from normalize_fn_api import donusturme
+
+donusturme(
+    "data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    yil="2021",
+    system="oms",
+    mevcut_dosya_adi="2021"       # içinde 2021 geçen(ler)
+)
+
+donusturme(
+    folder="data/rapor/ham_veri/oms/tablo1/csv/",
+    kategori="tablo1",
+    cekim_tarihi="2025-10-01",
+    versiyon="v01",
+    yil="2023",          # yolundan da çıkarabilir ama burada net verdik
+    system="oms",        # yolundan da çıkarabilir
+    ay=None,             # "10" verirsen ad '2025-10' olur
+    part="",             # "" => otomatik; tek dosyada part eklenmez
+    exts=["xlsx","csv"], # sadece istediğin uzantılar
+    mevcut_dosya_adi="2023",       # içinde 2021 geçen(ler)
+    dry_run=False
+)
+
+
+
+2) Çağrıları art arda yaz (senin istediğin tarz)
+from normalize_fn_api import donusturme
+
+donusturme("data/rapor/ham_veri/oms/tablo1/csv/", "tablo1_oms", "2025-10-01", "v01", yil="2025", system="oms")
+donusturme("data/rapor/ham_veri/oms/tablo2/csv/", "tablo2_oms", "2025-10-01", "v01", yil="2025", system="oms")
+donusturme("data/rapor/ham_veri/crm/bildirimler/2022/", "bildirimler_crm", "2025-06-18", "01", yil="2022", system="crm")
+
+
+Notlar:
+
+versiyon hem "01" hem "v01" kabul eder.
+
+system ve yil vermezsen fonksiyon yolu analiz ederek yakalamaya çalışır (.../<system>/<kategori>/<yil>/...).
+
+Klasörde tek dosya varsa ve part="" ise part-XX eklenmez; çok dosya varsa part-01.. otomatik eklenir. Sabit bir part istiyorsan part="05" ver.
+
+3) Bir listeyle toplu
+from normalize_fn_api import batch_donustur
+
+jobs = [
+  dict(folder="data/rapor/ham_veri/oms/tablo1/csv/", kategori="tablo1_oms", cekim_tarihi="2025-10-01", versiyon="v01", yil="2025", system="oms"),
+  dict(folder="data/rapor/ham_veri/oms/tablo2/csv/", kategori="tablo2_oms", cekim_tarihi="2025-10-01", versiyon="v01", yil="2025", system="oms"),
+  dict(folder="data/rapor/ham_veri/crm/bildirimler/2022/", kategori="bildirimler_crm", cekim_tarihi="2025-06-18", versiyon="01", yil="2022", system="crm"),
+]
+batch_donustur(jobs)
+
+4) VS Code içinde Python dosyanın sonuna yazıp direkt çalıştırma
+if __name__ == "__main__":
+    # buraya kendi klasörlerini ekle
+    donusturme("data/rapor/ham_veri/oms/tablo1/csv/", "tablo1_oms", "2025-10-01", "v01", yil="2025", system="oms")
+    donusturme("data/rapor/ham_veri/oms/tablo2/csv/", "tablo2_oms", "2025-10-01", "v01", yil="2025", system="oms")
+
+
+İstersen raporlar.docx benzeri AI-brief üretimini bu dosyaya opsiyonel bir fonksiyon olarak da ekleyebilirim (aynı çağrıda belge oluştursun). Bunun da kısa bir sürümünü eklememi ister misin?
+
+
+'''

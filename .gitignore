@@ -139,3 +139,6 @@ media/
 # Production static files (collectstatic çıktısı)
 staticfiles/
 static_root/
+
+#data klasörünü alma
+data/

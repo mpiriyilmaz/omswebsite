@@ -13,10 +13,20 @@ def _tabs(vendor: str, year: int):
         return [
             {"slug": "ozet",           "label": "Özet",
              "url": reverse("duzeltme:ozet", args=[vendor, year])},
-            {"slug": "tablo1_detay",   "label": "Tablo1 Detay",
-             "url": reverse("duzeltme:page", args=[vendor, year, "tablo1_detay"])},
-            {"slug": "tablo1_yeni",    "label": "Yeni Tablo1",
-             "url": reverse("duzeltme:page", args=[vendor, year, "tablo1_yeni"])},
+            {"slug": "inavitas_tablo1",   "label": "Inavitas-Tablo1",
+             "url": reverse("duzeltme:page", args=[vendor, year, "inavitas_tablo1"])},
+            {"slug": "inavitas_bildirim",    "label": "Inavitas-Bildirim",
+             "url": reverse("duzeltme:page", args=[vendor, year, "inavitas_bildirim"])},
+            {"slug": "inavitas_cakisanlar",    "label": "Inavitas-Cakisanlar",
+             "url": reverse("duzeltme:page", args=[vendor, year, "inavitas_cakisanlar"])},
+            {"slug": "omstablo1",   "label": "OMS Tablo1",
+             "url": reverse("duzeltme:page", args=[vendor, year, "oms_tablo1"])},
+            {"slug": "omskesinti",    "label": "OMS Kesinti",
+             "url": reverse("duzeltme:page", args=[vendor, year, "oms_kesinti"])},
+               {"slug": "omsbildirim",    "label": "OMS Bildirim",
+             "url": reverse("duzeltme:page", args=[vendor, year, "oms_bildirim"])},
+            {"slug": "crmbildirim",    "label": "CRM Bildirim",
+             "url": reverse("duzeltme:page", args=[vendor, year, "crm_bildirim"])},
         ]
     if vendor == "oms":
         return [
